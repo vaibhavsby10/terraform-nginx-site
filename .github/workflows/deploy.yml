@@ -1,0 +1,36 @@
+name: Deploy HTML to EC2
+ 
+on:
+  push:
+    branches: [ "main" ]   # Runs whenever you push to main branch
+ 
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+ 
+    steps:
+      # Step 1: Checkout repo
+      - name: Checkout code
+        uses: actions/checkout@v3
+ 
+      # Step 2: Copy HTML files to EC2 using PEM key stored in GitHub Secrets
+      - name: Copy HTML files to EC2
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_HOST }}       # Your EC2 public IP stored in secrets
+          username: ubuntu                    # Default Ubuntu user
+          key: ${{ secrets.EC2_SSH_KEY }}     # Your PEM key stored in secrets
+          source: "*.html"                    # Files to copy
+          target: "/var/www/html"             # Nginx document root
+ 
+      # Step 3: Restart Nginx after deployment
+      - name: Restart Nginx
+        uses: appleboy/ssh-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            sudo systemctl restart nginx
+ 
+ 
